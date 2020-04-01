@@ -1,10 +1,29 @@
 <template>
   <div class="home">
-    <img alt="Vue logo" src="../assets/logo.png">
+    <a-input placeholder="请输入任务" class="my_ipt" :value="inputValue" @change="handleInputChange"></a-input>
+    <a-button type="primary" @click="addItemToList">添加事项</a-button>
+    <a-list bordered :dataSource="infoList" class="dt_list">
+    	<a-list-item slot="renderItem" slot-scope="item">
+    		<a-checkbox :checked="item.done" @change="(e) => {cdStatusChange(e,item.id)}">{{ item.info }}</a-checkbox>
+    		<a slot="actions" @click="removeItemById(item.id)">删除</a>
+    	</a-list-item>
+    	
+    	<div slot="footer" class="footer">
+    		<span>{{ unDoneLength }}条剩余</span>
+    		<a-button-group>
+    			<a-button :type="viewKey === 'all' ? 'primary' :　'default'" @click="changeList('all')">全部</a-button>
+    			<a-button :type="viewKey === 'undone' ? 'primary' :　'default'" @click="changeList('undone')">未完成</a-button>
+    			<a-button :type="viewKey === 'done' ? 'primary' :　'default'" @click="changeList('done')">已完成</a-button>
+    		</a-button-group>
+    		
+    		<a @click="clean">清除已完成</a>
+    	</div>
+    </a-list>
   </div>
 </template>
 
 <script>
+import { mapState,mapGetters } from 'vuex';
 
 export default {
   name: 'Home',
@@ -12,6 +31,68 @@ export default {
 	  return{
 		  
 	  }
+  },
+  created(){
+	  this.$store.dispatch('getList')
+  },
+  methods:{
+	  // 监听文本框内容变化
+	  handleInputChange(e){
+		  // console.log(e.target.value)
+		  this.$store.commit('setInputValue',e.target.value)
+	  },
+	  // 像列表中新增item项
+	  addItemToList(){
+		  if(this.inputValue.trim().length <= 0){
+			  return this.$message.warning('文本框内容不能为空！')
+		  }
+		  this.$store.commit('addItem')
+	  },
+	  // 根据id删除对应的任务事项
+	  removeItemById(id){
+		  this.$store.commit('removeItem',id)
+	  },
+	  // 监听复选框选中状态的变化事件
+	  cdStatusChange(e,id){
+		  // console.log(e.target.checked)
+		  const params = {
+			  id: id,
+			  status: e.target.checked
+		  }
+		  this.$store.commit('changeStatus',params)
+	  },
+	  // 清除已完成的任务
+	  clean(){
+		  this.$store.commit('cleanDone')
+	  },
+	  // 修改页面上展示的列表数据
+	  changeList(key){
+		  // console.log(key)
+		 this.$store.commit('changeViewKey',key)
+	  }
+  },
+  computed:{
+	  ...mapState(['inputValue','viewKey']),
+	  ...mapGetters(['infoList','unDoneLength'])
   }
 }
 </script>
+
+<style lang="less">
+	.home{
+		padding: 10px;
+	}
+	.my_ipt{
+		width: 500px !important;
+		margin-right: 10px !important;
+	}
+	.dt_list{
+		width: 500px;
+		margin-top: 10px;
+	}
+	.footer{
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+	}
+</style>
